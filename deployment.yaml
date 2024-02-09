@@ -1,0 +1,78 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "core-java"
+  namespace: "core-app"
+  labels:
+    app: "core-java"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: "core-java"
+  template:
+    metadata:
+      labels:
+        app: "core-java"
+    spec:
+      containers:
+        - name: "gcr-k8-deployment"
+          image: "us.gcr.io/corejava-project/gcr-k8-deployment-demo-image-2"
+          #command: [ "/bin/sh","-c","sleep 900" ]
+          #imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: app-config
+              mountPath: "/etc/config"
+              #readOnly: false
+#          env:
+#            - name: "hostnameFromConfig"
+#              valueFrom:
+#               configMapKeyRef:
+#                 name: "configmap-3"
+#                 key: "key1"
+      restartPolicy: Always
+      volumes:
+       - name: app-config
+         configMap:
+              name: demo
+---
+apiVersion: "autoscaling/v2"
+kind: "HorizontalPodAutoscaler"
+metadata:
+  name: "core-java-hpa"
+  namespace: "core-app"
+  labels:
+    app: "core-java"
+spec:
+  scaleTargetRef:
+    kind: "Deployment"
+    name: "core-java"
+    apiVersion: "apps/v1"
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: "Resource"
+      resource:
+        name: "cpu"
+        target:
+          type: "Utilization"
+          averageUtilization: 8080
+---
+# service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: "core-java-service"
+spec:
+  selector:
+    app: "core-java"
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: NodePort

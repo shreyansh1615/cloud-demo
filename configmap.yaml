@@ -1,0 +1,8 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: demo
+data:
+  application.properties: |
+    greeting.message=Say Hello to the World
+    farewell.message= Bye Bye
